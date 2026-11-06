@@ -10,6 +10,7 @@ import com.intellij.psi.PsiClass;
 import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiJavaFile;
 import com.intellij.psi.PsiElement;
+import com.intellij.psi.PsiDocumentManager;
 import com.intellij.psi.util.PsiTreeUtil;
 
 /**
@@ -26,7 +27,7 @@ public class MainAction extends AnAction {
     public void update(AnActionEvent event) {
         Project project = event.getData(CommonDataKeys.PROJECT);
         Editor editor = event.getData(CommonDataKeys.EDITOR);
-        PsiFile file = event.getData(CommonDataKeys.PSI_FILE);
+        PsiFile file = getPsiFile(event, project, editor);
         boolean enabled = project != null && editor != null && file instanceof PsiJavaFile
                 && findTargetClass(editor, file) != null;
         event.getPresentation().setEnabledAndVisible(enabled);
@@ -39,7 +40,7 @@ public class MainAction extends AnAction {
         if (project == null || editor == null) {
             return;
         }
-        PsiFile mFile = event.getData(CommonDataKeys.PSI_FILE);
+        PsiFile mFile = getPsiFile(event, project, editor);
         PsiClass psiClass = findTargetClass(editor, mFile);
         if (!(mFile instanceof PsiJavaFile) || psiClass == null) {
             return;
@@ -66,6 +67,14 @@ public class MainAction extends AnAction {
         }
         PsiClass[] classes = ((PsiJavaFile) file).getClasses();
         return classes.length == 0 ? null : classes[0];
+    }
+
+    private PsiFile getPsiFile(AnActionEvent event, Project project, Editor editor) {
+        PsiFile file = event.getData(CommonDataKeys.PSI_FILE);
+        if (file == null && project != null && editor != null) {
+            file = PsiDocumentManager.getInstance(project).getPsiFile(editor.getDocument());
+        }
+        return file;
     }
 
 }

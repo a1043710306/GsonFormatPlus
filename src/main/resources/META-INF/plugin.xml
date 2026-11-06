@@ -166,6 +166,7 @@ which is base on GsonFormat and more flexible and convenient. Welcome to issue a
     <actions>
         <action id="GsonFormatPlus" class="com.foxsteps.gsonformat.MainAction" text="GsonFormatPlus">
             <add-to-group group-id="GenerateGroup" anchor="last"/>
+            <add-to-group group-id="EditorPopupMenu" anchor="last"/>
             <keyboard-shortcut keymap="$default" first-keystroke="alt s"/>
         </action>
     </actions>
