@@ -4,11 +4,6 @@ import com.foxsteps.gsonformat.entity.ClassEntity;
 import com.foxsteps.gsonformat.process.ClassProcessor;
 import com.foxsteps.gsonformat.process.IProcessor;
 import com.foxsteps.gsonformat.ui.Toast;
-import com.intellij.openapi.application.RunResult;
-import com.intellij.openapi.command.WriteCommandAction;
-import com.intellij.openapi.progress.ProgressIndicator;
-import com.intellij.openapi.progress.ProgressManager;
-import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.MessageType;
 import com.intellij.psi.JavaPsiFacade;
@@ -19,61 +14,40 @@ import com.intellij.psi.PsiFile;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Created with IntelliJ IDEA.
- * User: dim
- * Date: 14-7-4
- * Time: 下午3:58
- */
-public class DataWriter extends WriteCommandAction.Simple {
+/** Writes generated PSI. Callers must invoke this from an IntelliJ write action. */
+public class DataWriter {
 
     private PsiClass cls;
     private PsiElementFactory factory;
     private Project project;
-    private PsiFile file;
     private ClassEntity targetClass;
     private List<String> generateClassList = new ArrayList<>();
 
     public DataWriter(PsiFile file, Project project, PsiClass cls) {
-        super(project, file);
         factory = JavaPsiFacade.getElementFactory(project);
-        this.file = file;
         this.project = project;
         this.cls = cls;
     }
 
     public void execute(ClassEntity targetClass) {
         this.targetClass = targetClass;
-        ProgressManager.getInstance().run(new Task.Backgroundable(project, "GsonFormat") {
-
-            @Override
-            public void run(ProgressIndicator progressIndicator) {
-                progressIndicator.setIndeterminate(true);
-                long currentTimeMillis = System.currentTimeMillis();
-                execute();
-                progressIndicator.setIndeterminate(false);
-                progressIndicator.setFraction(1.0);
-                StringBuffer sb = new StringBuffer();
-                sb.append("GsonFormat [" + (System.currentTimeMillis() - currentTimeMillis) + " ms]\n");
+        // PSI mutations must run inside the write action supplied by the caller.
+        // Running this from Task.Backgroundable used to work by accident, but
+        // modern IntelliJ versions reject write actions from a background thread.
+        long currentTimeMillis = System.currentTimeMillis();
+        run();
+        StringBuffer sb = new StringBuffer();
+        sb.append("GsonFormat [" + (System.currentTimeMillis() - currentTimeMillis) + " ms]\n");
 //                sb.append("generate class : ( "+generateClassList.size()+" )\n");
 //                for (String item: generateClassList) {
 //                    sb.append("    at "+item+"\n");
 //                }
 //                sb.append("  \n");
 //                NotificationCenter.info(sb.toString());
-                Toast.make(project, MessageType.INFO, sb.toString());
-            }
-        });
-    }
-    
-    @Override
-    @Deprecated()
-    public RunResult execute() {
-        return super.execute();
+        Toast.make(project, MessageType.INFO, sb.toString());
     }
 
-    @Override
-    protected void run() {
+    private void run() {
         if (targetClass == null) {
             return;
         }

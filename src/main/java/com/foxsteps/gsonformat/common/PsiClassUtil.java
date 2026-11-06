@@ -1,10 +1,8 @@
 package com.foxsteps.gsonformat.common;
 
-import com.intellij.ide.util.DirectoryUtil;
 import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.psi.*;
-import com.intellij.psi.impl.source.PsiJavaFileImpl;
 import com.intellij.psi.search.EverythingGlobalScope;
 import com.intellij.psi.search.GlobalSearchScope;
 import org.apache.http.util.TextUtils;
@@ -49,15 +47,17 @@ public class PsiClassUtil {
 
     public static PsiDirectory getJavaSrc(PsiFile psiFile) {
         PsiDirectory psiDirectory = null;
-        if (psiFile instanceof PsiJavaFileImpl) {
-            String packageName = ((PsiJavaFileImpl) psiFile).getPackageName();
-            String[] arg = packageName.split("\\.");
+        if (psiFile instanceof PsiJavaFile) {
+            String packageName = ((PsiJavaFile) psiFile).getPackageName();
             psiDirectory = psiFile.getContainingDirectory();
 
-            for (int i = 0; i < arg.length; i++) {
-                psiDirectory = psiDirectory.getParent();
-                if (psiDirectory == null) {
-                    break;
+            if (!packageName.isEmpty()) {
+                String[] arg = packageName.split("\\.");
+                for (int i = 0; i < arg.length; i++) {
+                    psiDirectory = psiDirectory.getParent();
+                    if (psiDirectory == null) {
+                        break;
+                    }
                 }
             }
         }
@@ -138,7 +138,21 @@ public class PsiClassUtil {
     }
 
     public static PsiDirectory createPackageInSourceRoot(String packageName, PsiDirectory sourcePackageRoot) {
-        return DirectoryUtil.createSubdirectories(packageName, sourcePackageRoot, ".");
+        PsiDirectory current = sourcePackageRoot;
+        if (current == null || TextUtils.isEmpty(packageName)) {
+            return current;
+        }
+        for (String segment : packageName.split("\\.")) {
+            if (TextUtils.isEmpty(segment)) {
+                continue;
+            }
+            PsiDirectory child = current.findSubdirectory(segment);
+            if (child == null) {
+                child = current.createSubdirectory(segment);
+            }
+            current = child;
+        }
+        return current;
     }
 
     private PsiClass getPsiClassByName(Project project, String cls) {

@@ -11,7 +11,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.MessageType;
 import com.intellij.psi.PsiClass;
 import com.intellij.psi.PsiFile;
-import com.intellij.psi.impl.source.PsiJavaFileImpl;
+import com.intellij.psi.PsiJavaFile;
 import org.apache.http.util.TextUtils;
 import com.foxsteps.gsonformat.tools.json.JSONArray;
 import com.foxsteps.gsonformat.tools.json.JSONException;
@@ -66,7 +66,8 @@ public class JsonDialog extends JFrame implements ConvertBridge.Operator {
         cardLayout = (CardLayout) generateClassP.getLayout();
         generateClassTF.setBackground(errorLB.getBackground());
         //获取当前Class
-        currentClass = ((PsiJavaFileImpl) file).getPackageName() + "." + file.getName().split("\\.")[0];
+        String packageName = file instanceof PsiJavaFile ? ((PsiJavaFile) file).getPackageName() : "";
+        currentClass = (packageName.isEmpty() ? "" : packageName + ".") + file.getName().split("\\.")[0];
         generateClassLB.setText(currentClass);
         generateClassTF.setText(currentClass);
         //生成类输入框焦点监听器
